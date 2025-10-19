@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureLogin - OTP Verification</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            animation: fadeIn 0.8s ease;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+        }
+
+        .logo {
+            margin-bottom: 25px;
+        }
+
+        .logo h1 {
+            color: #2575fc;
+            font-size: 28px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .logo p {
+            color: #666;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+
+        .form-container {
+            position: relative;
+            height: 300px;
+            overflow: hidden;
+        }
+
+        .form-step {
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            opacity: 0;
+            transform: translateX(20px);
+            pointer-events: none;
+        }
+
+        .form-step.active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: all;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #444;
+            font-weight: 500;
+        }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-with-icon i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 14px 14px 45px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+
+        input:focus {
+            border-color: #2575fc;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(37, 117, 252, 0.2);
+        }
+
+        .error-message {
+            color: #f44336;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .btn {
+            background: #2575fc;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: #1a68e8;
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #b0c8ff;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .otp-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .otp-input {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 0;
+        }
+
+        .resend-otp {
+            margin-top: 15px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .resend-otp a {
+            color: #2575fc;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .resend-otp a:hover {
+            text-decoration: underline;
+        }
+
+        .success-message {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f7ef;
+            border-radius: 8px;
+            color: #2e7d32;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .timer {
+            color: #f44336;
+            font-weight: 500;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        .step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 10px;
+            font-weight: bold;
+            color: #777;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .step.active {
+            background: #2575fc;
+            color: white;
+        }
+
+        .step-line {
+            height: 2px;
+            width: 40px;
+            background: #e0e0e0;
+            margin: 0 5px;
+            align-self: center;
+            transition: background 0.3s;
+        }
+
+        .step-line.active {
+            background: #2575fc;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 30px 20px;
+            }
+            
+            .otp-input {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .step-line {
+                width: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-card">
+            <div class="logo">
+                <h1><i class="fas fa-lock"></i> SecureLogin</h1>
+                <p>One-time password verification</p>
+            </div>
+            
+            <div class="step-indicator">
+                <div class="step active">1</div>
+                <div class="step-line"></div>
+                <div class="step">2</div>
+                <div class="step-line"></div>
+                <div class="step">3</div>
+            </div>
+            
+            <div class="form-container">
+                <!-- Step 1: Phone Number -->
+                <div class="form-step active" id="step1">
+                    <div class="form-group">
+                        <label for="phone">Enter your 10-digit phone number</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-phone"></i>
+                            <input type="tel" id="phone" placeholder="1234567890" maxlength="10">
+                        </div>
+                        <div class="error-message" id="phone-error">Please enter a valid 10-digit phone number</div>
+                    </div>
+                    <button class="btn" id="send-otp-btn">
+                        <i class="fas fa-paper-plane"></i> Send OTP
+                    </button>
+                </div>
+                
+                <!-- Step 2: OTP Verification -->
+                <div class="form-step" id="step2">
+                    <div class="form-group">
+                        <label for="otp">Enter the 6-digit OTP sent to your phone</label>
+                        <div class="otp-container">
+                            <input type="text" maxlength="1" class="otp-input">
+                            <input type="text" maxlength="1" class="otp-input">
+                            <input type="text" maxlength="1" class="otp-input">
+                            <input type="text" maxlength="1" class="otp-input">
+                            <input type="text" maxlength="1" class="otp-input">
+                            <input type="text" maxlength="1" class="otp-input">
+                        </div>
+                        <div class="error-message" id="otp-error">Please enter a valid 6-digit OTP</div>
+                    </div>
+                    <button class="btn" id="verify-otp-btn" disabled>
+                        <i class="fas fa-check-circle"></i> Verify OTP
+                    </button>
+                    <div class="resend-otp">
+                        Didn't receive code? <a href="#" id="resend-otp">Resend in <span class="timer" id="timer">60</span>s</a>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Success -->
+                <div class="form-step" id="step3">
+                    <div class="success-message">
+                        <i class="fas fa-check-circle"></i>
+                        <p>Login successful! Redirecting to your account...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const step1 = document.getElementById('step1');
+            const step2 = document.getElementById('step2');
+            const step3 = document.getElementById('step3');
+            const phoneInput = document.getElementById('phone');
+            const sendOtpBtn = document.getElementById('send-otp-btn');
+            const verifyOtpBtn = document.getElementById('verify-otp-btn');
+            const otpInputs = document.querySelectorAll('.otp-input');
+            const resendOtpLink = document.getElementById('resend-otp');
+            const timerDisplay = document.getElementById('timer');
+            const phoneError = document.getElementById('phone-error');
+            const otpError = document.getElementById('otp-error');
+            const steps = document.querySelectorAll('.step');
+            const stepLines = document.querySelectorAll('.step-line');
+            
+            // Variables
+            let generatedOtp = '';
+            let timer;
+            let timeLeft = 60;
+            let userPhone = '';
+            
+            // Initialize
+            setupEventListeners();
+            
+            function setupEventListeners() {
+                // Phone number validation
+                phoneInput.addEventListener('input', function() {
+                    // Only allow numbers
+                    this.value = this.value.replace(/\D/g, '');
+                    
+                    // Hide error if valid
+                    if (this.value.length === 10) {
+                        phoneError.style.display = 'none';
+                    }
+                });
+                
+                // Send OTP button
+                sendOtpBtn.addEventListener('click', sendOtp);
+                
+                // OTP input handling
+                otpInputs.forEach((input, index) => {
+                    input.addEventListener('input', (e) => {
+                        // Only allow numbers
+                        e.target.value = e.target.value.replace(/\D/g, '');
+                        
+                        // Auto-focus next input
+                        if (e.target.value && index < otpInputs.length - 1) {
+                            otpInputs[index + 1].focus();
+                        }
+                        
+                        // Enable verify button if all inputs are filled
+                        verifyOtpBtn.disabled = !isOtpComplete();
+                        otpError.style.display = 'none';
+                    });
+                    
+                    // Handle backspace
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                            otpInputs[index - 1].focus();
+                        }
+                    });
+                });
+                
+                // Verify OTP button
+                verifyOtpBtn.addEventListener('click', verifyOtp);
+                
+                // Resend OTP
+                resendOtpLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (timeLeft === 0) {
+                        sendOtp();
+                    }
+                });
+            }
+            
+            function sendOtp() {
+                const phone = phoneInput.value.trim();
+                
+                // Phone validation
+                if (phone.length !== 10) {
+                    phoneError.style.display = 'block';
+                    phoneInput.focus();
+                    return;
+                }
+                
+                userPhone = phone;
+                
+                // Generate random 6-digit OTP
+                generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+                
+                // In a real app, you would send this OTP to the user's phone via SMS
+                console.log(`OTP for ${phone}: ${generatedOtp}`);
+                alert(`OTP sent to ${phone}: ${generatedOtp}`); // For demo purposes
+                
+                // Move to step 2
+                step1.classList.remove('active');
+                step2.classList.add('active');
+                
+                // Update step indicator
+                steps[1].classList.add('active');
+                stepLines[0].classList.add('active');
+                
+                // Start timer
+                startTimer();
+                
+                // Focus first OTP input
+                setTimeout(() => {
+                    otpInputs[0].focus();
+                }, 500);
+            }
+            
+            function startTimer() {
+                timeLeft = 60;
+                timerDisplay.textContent = timeLeft;
+                resendOtpLink.style.pointerEvents = 'none';
+                
+                timer = setInterval(() => {
+                    timeLeft--;
+                    timerDisplay.textContent = timeLeft;
+                    
+                    if (timeLeft === 0) {
+                        clearInterval(timer);
+                        resendOtpLink.style.pointerEvents = 'auto';
+                        resendOtpLink.innerHTML = 'Resend OTP';
+                    }
+                }, 1000);
+            }
+            
+            function isOtpComplete() {
+                return Array.from(otpInputs).every(input => input.value);
+            }
+            
+            function verifyOtp() {
+                const enteredOtp = Array.from(otpInputs).map(input => input.value).join('');
+                
+                if (enteredOtp === generatedOtp) {
+                    // OTP is correct
+                    step2.classList.remove('active');
+                    step3.classList.add('active');
+                    
+                    // Update step indicator
+                    steps[2].classList.add('active');
+                    stepLines[1].classList.add('active');
+                    
+                    // In a real app, you would redirect to the user's dashboard
+                    setTimeout(() => {
+                        alert(`Login successful! Welcome ${userPhone}`);
+                        // Reset form for demo
+                        resetForm();
+                    }, 2000);
+                } else {
+                    // OTP is incorrect
+                    otpError.style.display = 'block';
+                    otpInputs.forEach(input => {
+                        input.value = '';
+                        input.style.borderColor = '#f44336';
+                    });
+                    otpInputs[0].focus();
+                    verifyOtpBtn.disabled = true;
+                    
+                    // Reset border color after 2 seconds
+                    setTimeout(() => {
+                        otpInputs.forEach(input => {
+                            input.style.borderColor = '#ddd';
+                        });
+                    }, 2000);
+                }
+            }
+            
+            function resetForm() {
+                // Reset to step 1
+                step3.classList.remove('active');
+                step1.classList.add('active');
+                
+                // Reset inputs
+                phoneInput.value = '';
+                otpInputs.forEach(input => input.value = '');
+                
+                // Reset step indicator
+                steps[1].classList.remove('active');
+                steps[2].classList.remove('active');
+                stepLines[0].classList.remove('active');
+                stepLines[1].classList.remove('active');
+                
+                // Reset timer
+                clearInterval(timer);
+                timeLeft = 60;
+                timerDisplay.textContent = timeLeft;
+                resendOtpLink.innerHTML = 'Resend in <span class="timer" id="timer">60</span>s';
+                
+                // Focus phone input
+                phoneInput.focus();
+            }
+        });
+    </script>
+</body>
+</html>
